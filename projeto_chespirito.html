@@ -1,0 +1,251 @@
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+	<head>
+	  <meta charset="UTF-8" />
+	  <title>Projeto Chepirito</title>
+	  <style>
+		body {
+		  margin: 0;
+		  font-family: 'Segoe UI', sans-serif;
+		  background: #f7f9fc;
+		  color: #222;
+		}
+
+		header {
+		  background: #0026ff;
+		  color: white;
+		  padding: 30px 20px;
+		  text-align: center;
+		}
+
+		header h1 {
+		  font-size: 2.5em;
+		  margin: 0;
+		  text-shadow: 1px 1px 3px #000;
+		}
+
+		#ano-nav {
+		  margin-top: 20px;
+		  display: flex;
+		  flex-wrap: wrap;
+		  justify-content: center;
+		  gap: 8px;
+		}
+
+		#ano-nav button {
+		  background: white;
+		  border: none;
+		  color: #0026ff;
+		  font-weight: bold;
+		  padding: 6px 12px;
+		  border-radius: 15px;
+		  font-size: 0.9rem;
+		  cursor: pointer;
+		  transition: 0.3s;
+		  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+
+		#ano-nav button:hover,
+		#ano-nav button.active {
+		  background: #0026ff;
+		  color: white;
+		}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto; /* centraliza */
+  padding: 40px 20px;
+  background: #0026ff; /* fundo azul */
+  min-height: 100vh; /* ocupa toda a altura visível */
+}
+		.episodio {
+		  background: white;
+		  border-radius: 8px;
+		  margin-bottom: 30px;
+		  padding: 20px;
+		  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+		}
+
+	.episodio h2 {
+	  color: #0026ff;
+	  font-size: 0.95rem;
+	  margin-bottom: 10px;
+	  font-weight: 600;
+	  line-height: 1.4;
+	}
+	.programas-container {
+	  display: flex;
+	  flex-wrap: wrap;
+	  justify-content: flex-start;
+	  gap: 12px;
+	}
+
+	.programa {
+	  width: 120px;
+	  background: #ffffff;
+	  border: 1px solid #ddd;
+	  border-radius: 6px;
+	  overflow: hidden;
+	  cursor: pointer;
+	  transition: 0.2s;
+	  font-size: 0.8rem;
+	  text-align: center;
+	}
+		.programa img {
+		  width: 100%;
+		  height: 100px;
+		  object-fit: cover;
+		  transition: transform 0.2s ease;
+		}
+
+		.programa:hover img {
+		  transform: scale(1.03);
+		}
+
+		.info {
+		  padding: 6px;
+		}
+
+		.info strong {
+		  display: block;
+		  color: #0026ff;
+		  font-size: 0.85rem;
+		  margin-bottom: 2px;
+		}
+
+		.extra-info {
+		  display: none;
+		  padding: 6px;
+		  font-size: 0.75rem;
+		  background: #f9f9f9;
+		  border-top: 1px solid #ccc;
+		}
+
+		.programa.aberto .extra-info {
+		  display: block;
+		}
+
+		@media (max-width: 600px) {
+		  .programas-container {
+			grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));
+		  }
+
+		  .programa img {
+			height: 160px;
+		  }
+		}
+	  </style>
+	</head>
+	<body>
+	  <header>
+		<h1>PROJETO CHEPIRITO</h1>
+		<nav id="ano-nav"></nav>
+	  </header>
+
+	  <main id="conteudo">
+		<p>Carregando episódios...</p>
+	  </main>
+
+<script>
+let dados = [];
+let anoAtual = null;
+
+async function carregarDados() {
+  try {
+    const res = await fetch('episodios_final.json');
+    dados = await res.json();
+    const anos = [...new Set(dados.map(ep => ep.ano))].sort();
+    gerarMenuAnos(anos);
+    mostrarAno(anos[0]);
+  } catch (err) {
+    document.getElementById('conteudo').innerHTML = '<p>Erro ao carregar o JSON.</p>';
+    console.error(err);
+  }
+}
+
+function gerarMenuAnos(anos) {
+  const nav = document.getElementById('ano-nav');
+  nav.innerHTML = '';
+  anos.forEach(ano => {
+    const btn = document.createElement('button');
+    btn.textContent = ano;
+    btn.onclick = () => mostrarAno(ano);
+    btn.dataset.ano = ano;
+    nav.appendChild(btn);
+  });
+}
+
+function mostrarAno(ano) {
+  anoAtual = ano;
+  document.querySelectorAll('#ano-nav button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.ano == ano);
+  });
+
+  const container = document.getElementById('conteudo');
+  container.innerHTML = '';
+
+  const episodiosDoAno = dados.filter(ep => ep.ano === ano);
+
+  episodiosDoAno.forEach(ep => {
+    const box = document.createElement('div');
+    box.className = 'episodio';
+
+    const titulo = document.createElement('h2');
+    titulo.textContent = `#${ep.numero} — ${ep.titulos}`;
+    box.appendChild(titulo);
+
+    const programasContainer = document.createElement('div');
+    programasContainer.className = 'programas-container';
+
+    ep.programas.forEach(p => {
+      const prog = document.createElement('div');
+      prog.className = 'programa';
+
+      // Fundo verde se dublagem encontrada
+      if (!(p.dublagens.length === 1 && p.dublagens[0] === "Não encontrado")) {
+        prog.style.backgroundColor = "#d4f7d4"; // verde claro
+        prog.style.border = "1px solid #4caf50"; // borda verde
+      }
+
+      const img = document.createElement('img');
+      img.src = p.imagem;
+      img.alt = p.programa;
+
+      // Força recarregar a imagem e trata erros
+      img.onload = () => console.log(`Imagem carregada: ${p.imagem}`);
+      img.onerror = () => console.warn(`Erro ao carregar: ${p.imagem}`);
+
+      img.onclick = () => prog.classList.toggle('aberto');
+
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = `
+        <strong>${p.programa}</strong>
+        <div>${p.esquete || ''}</div>
+      `;
+
+      const extra = document.createElement('div');
+      extra.className = 'extra-info';
+      extra.innerHTML = `
+        <div><strong>Dublagens:</strong> ${p.dublagens.join(', ')}</div>
+        <div><strong>Exibido:</strong> ${p.exibido.join(', ')}</div>
+      `;
+
+      prog.appendChild(img);
+      prog.appendChild(info);
+      prog.appendChild(extra);
+
+      programasContainer.appendChild(prog);
+    });
+
+    box.appendChild(programasContainer);
+    container.appendChild(box);
+  });
+}
+
+// Carrega tudo ao iniciar
+carregarDados();
+</script>
+
+	</body>
+	</html>
